@@ -1,0 +1,2 @@
+# Remove branches that have already been merged
+git branch --merged | egrep -v "(^\*|master)" | xargs git branch -d

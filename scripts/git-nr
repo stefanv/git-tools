@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+"""git-nr: add new remote
+
+git nr username
+
+Adds remote "username" as git@github.com:username/current_repo.git
+
+"""
+
+from __future__ import print_function
+import subprocess
+import sys
+
+if len(sys.argv) != 2:
+    print("Usage: git-nr github-username")
+    sys.exit(-1)
+
+username = sys.argv[1]
+
+out = subprocess.check_output("git remote show -n origin".split())
+out = [l for l in out.split(b'\n') if b"Fetch URL" in l][0]
+url = out.strip().split(b' ')[-1]
+
+repo = url.split(b'/')[-1]
+
+remote = "git@github.com:{0}/{1}".format(username, repo.decode('utf-8'))
+
+print("Adding remote %s" % remote)
+subprocess.check_output(('git remote add {0} {1}'.format(username, remote)).split())
+

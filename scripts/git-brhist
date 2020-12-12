@@ -1,0 +1,2 @@
+# Show last modification dates of branches
+for branch in `git branch -r | grep -v HEAD | grep stefanv`; do echo -e `git show --format="%ci %cr %an" $branch | head -n 1` \\t$branch; done | sort -r
