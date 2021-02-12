@@ -21,10 +21,11 @@ out = subprocess.check_output("git remote show -n origin".split())
 out = [l for l in out.split(b'\n') if b"Fetch URL" in l][0]
 url = out.strip().split(b' ')[-1]
 
-repo = url.split(b'/')[-1]
+url = url.decode('utf-8')
+origin, repo = url.split('/')
+host = origin.split(':')[0]
 
-remote = "git@github.com:{0}/{1}".format(username, repo.decode('utf-8'))
+remote = f"{host}:{username}/{repo}"
 
 print("Adding remote %s" % remote)
 subprocess.check_output(('git remote add {0} {1}'.format(username, remote)).split())
-
