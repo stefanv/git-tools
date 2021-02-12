@@ -7,7 +7,7 @@ provide new git commands.  For example, if `git-pr` is on your path,
 you can now use `git pr`.
 
 - `brhist`: Show last modification date of each branch
-- `nr`: Add new remote for GitHub user X
+- `nr`: Add new remote for GitHub/GitLab user X
 - `pr`: Fetch one or more pull requests to branch pr/X.
 - `rmb`: Remove already merged branches
 - `wipe`: Permanently delete files from repository by rewriting history.
