@@ -9,7 +9,7 @@ you can now use `git pr`.
 - `brhist`: Show last modification date of each branch
 - `nr`: Add new remote for GitHub/GitLab user X
 - `pr`: Fetch one or more pull requests to branch pr/X.
-- `rmb`: Remove already merged branches
+- `rmb`: Remove already merged branches locally and remotely. I don't have a good solution for this at the moment; do you?
 - `wipe`: Permanently delete files from repository by rewriting history.
 
 ## Aliases
