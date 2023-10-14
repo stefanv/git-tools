@@ -8,9 +8,8 @@ you can now use `git pr`.
 
 - `nr`: Add new remote for GitHub/GitLab user X
 - `pr`: Fetch one or more pull requests to branch pr/X.
-- `rmm`: Remove merged (or squash merged) branches locally.
-         It wouldn't be too hard to adapt this to also remove merged remote
-         branches; any takers?
+- `rmm`: Remove squash merged branches locally.
+         This command still needs to be updated to (a) remove merged commits and (b) remove remote branches; any takers?
 - `brhist`: Show last modification date of each branch
 - `wipe`: Permanently delete files from repository by rewriting history.
 
