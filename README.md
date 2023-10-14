@@ -6,10 +6,12 @@ Under `scripts` you will find tools that, if added to your path,
 provide new git commands.  For example, if `git-pr` is on your path,
 you can now use `git pr`.
 
-- `brhist`: Show last modification date of each branch
 - `nr`: Add new remote for GitHub/GitLab user X
 - `pr`: Fetch one or more pull requests to branch pr/X.
-- `rmb`: Remove already merged branches locally and remotely. I don't have a good solution for this at the moment; do you?
+- `rmm`: Remove merged (or squash merged) branches locally.
+         It wouldn't be too hard to adapt this to also remove merged remote
+         branches; any takers?
+- `brhist`: Show last modification date of each branch
 - `wipe`: Permanently delete files from repository by rewriting history.
 
 ## Aliases
