@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Adapted from https://blog.takanabe.tokyo/en/2020/04/remove-squash-merged-local-git-branches/
+
+# Remove merged branches
+git branch --merged | grep -E -v "(^\*|main|master)" | xargs -I % git branch -d %
+
+# Remove squash merged branches
 main=$(git branch -l master main | sed 's/^* //' | xargs)
 git checkout -q $main &&
   git for-each-ref refs/heads/ "--format=%(refname:short)" |
