@@ -33,6 +33,9 @@ br = branch
 cp = cherry-pick
 ga = annex
 
+# Email log; useful for grabbing commit messages for pasting into, e.g., GitHub
+el = log --pretty=e
+
 # List all remote branches
 rbr = "!f() { git branch -r | grep "^[[:space:]]*$1.*" | cut -d '/' -f 2 | sort | uniq | column ; }; f"
 
