@@ -33,6 +33,9 @@ br = branch
 cp = cherry-pick
 ga = annex
 
+# Pull from the upstream repository
+pom = "pull origin main"  # or "pull upstream main", depending how you name remotes
+
 # Email log; useful for grabbing commit messages for pasting into, e.g., GitHub
 el = log --pretty=e
 
