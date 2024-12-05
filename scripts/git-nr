@@ -28,4 +28,7 @@ host = origin.split(':')[0]
 remote = f"{host}:{username}/{repo}"
 
 print("Adding remote %s" % remote)
-subprocess.check_output(('git remote add {0} {1}'.format(username, remote)).split())
+try:
+    p = subprocess.run(['git', 'remote', 'add', username, remote])
+except subprocess.CalledProcessError as e:
+    print(e)
