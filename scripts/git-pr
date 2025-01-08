@@ -6,6 +6,7 @@ A small convenience script to checkout pull requests as a local branch
 and clean up once done.
 
 git pr NR
+git pr --push NR
 git pr --done NR
 """
 
@@ -84,10 +85,16 @@ def parse_command_line():
         help="Number of the pull request to check out",
     )
     parser.add_argument(
+        "-p",
+        "--push",
+        action="store_true",
+        help="Push changes on PR branch to remote (assume existing PR branch)",
+    )
+    parser.add_argument(
         "-d",
         "--done",
         action="store_true",
-        help="Delete pull request branch and remote if they exist",
+        help="Delete pull request branch and remote (assume existing PR branch)",
     )
     parser.add_argument(
         "--remote",
@@ -107,26 +114,29 @@ def parse_command_line():
     return kwargs
 
 
-def remove_pr_branch(local_branch_name, *, fallback_branch, local_remote_name):
+def push_pr_changes(*, local_branch, original_branch, local_remote):
+    """Push changes from `local_branch` to `original_branch` on `local_remote`."""
+    run("git push", local_remote, f"{local_branch}:{original_branch}", show=True)
+
+
+def remove_pr_branch(*, local_branch, fallback_branch, local_remote):
     """Remove the branch of a previously checked out pull request.
 
-    Given the `local_branch_name` of a previously checked out pull request,
-    delete it and potentially its `local_remote_name` if it's the last branch
+    Given the `local_branch` of a previously checked out pull request,
+    delete it and potentially its `local_remote` if it's the last branch
     associated with that remote. Switch to `fallback_branch` if the current
     branch is the one to delete.
     """
-    if local_branch_name in BLACKLIST_BRANCH_NAMES:
+    if local_branch in BLACKLIST_BRANCH_NAMES:
         raise RuntimeError("requested to delete blacklisted branch `main`")
-    if local_remote_name in BLACKLIST_REMOTE_NAMES:
-        raise RuntimeError(
-            f"requested to remove blacklisted remote `{local_remote_name}`"
-        )
+    if local_remote in BLACKLIST_REMOTE_NAMES:
+        raise RuntimeError(f"requested to remove blacklisted remote `{local_remote}`")
 
     run("git switch", fallback_branch, show=True)
-    run(f"git branch -D", local_branch_name, check=False, show=True)
+    run(f"git branch -D", local_branch, check=False, show=True)
     branches = run("git branch -vv")
-    if local_remote_name not in branches:
-        run("git remote remove", local_remote_name, check=False, show=True)
+    if local_remote not in branches:
+        run("git remote remove", local_remote, check=False, show=True)
 
 
 @contextmanager
@@ -144,7 +154,9 @@ def handle_exceptions():
         sys.exit(1)
 
 
-def main(*, pr_number: str, done: bool, ref_remote: str, fallback_branch: str):
+def main(
+    *, pr_number: str, push: bool, done: bool, ref_remote: str, fallback_branch: str
+):
     """Run the script.
 
     Check `parse_command_line` for the meaning of the parameters.
@@ -160,42 +172,53 @@ def main(*, pr_number: str, done: bool, ref_remote: str, fallback_branch: str):
     pr_data = json.loads(html)
     pr_title = pr_data["title"]
     pr_html_url = pr_data["html_url"]
-    remote_name = pr_data["head"]["user"]["login"]
-    branch_name = pr_data["head"]["ref"]
+    original_remote = pr_data["head"]["user"]["login"]
+    original_branch = pr_data["head"]["ref"]
 
-    print(blue(f"{pr_title}\n{pr_html_url}\n{remote_name}:{branch_name}"))
+    print(blue(f"{pr_title}\n{pr_html_url}\n{original_remote}:{original_branch}\n"))
 
-    local_remote_name = f"_{remote_name}"
-    local_branch_name = f"pr/{pr_number}_{branch_name}"
+    local_remote = f"ghpr_{original_remote}"
+    local_branch = f"ghpr/{pr_number}_{original_branch}"
+
+    if push is True:
+        print(blue("Pushing local changes to PR"))
+        push_pr_changes(
+            original_branch=original_branch,
+            local_branch=local_branch,
+            local_remote=local_remote,
+        )
 
     if done is True:
+        print(blue("Removing branch and remote"))
         remove_pr_branch(
-            local_remote_name=local_remote_name,
+            local_remote=local_remote,
             fallback_branch=fallback_branch,
-            local_branch_name=local_branch_name,
+            local_branch=local_branch,
         )
-    else:
+
+    if push is False and done is False:
+        print(blue("Checking out PR (or updating existing branch)"))
         remotes = run("git remote")
-        if local_remote_name not in remotes:
+        if local_remote not in remotes:
             run(
                 "git remote add",
-                local_remote_name,
-                f"{BASE_URL}{remote_name}/{ref_repo}",
+                local_remote,
+                f"{BASE_URL}{original_remote}/{ref_repo}",
                 show=True,
             )
-        run("git fetch", local_remote_name, branch_name, show=True)
+        run("git fetch", local_remote, original_branch, show=True)
         branches = run("git branch")
-        if local_branch_name not in branches:
+        if local_branch not in branches:
             run(
                 "git checkout -b",
-                local_branch_name,
-                f"{local_remote_name}/{branch_name}",
+                local_branch,
+                f"{local_remote}/{original_branch}",
                 show=True,
             )
-            run("git config", f"branch.{local_branch_name}.description", pr_html_url)
+            run("git config", f"branch.{local_branch}.description", pr_html_url)
         else:
-            run("git switch", local_branch_name, show=True)
-        run("git merge", f"{local_remote_name}/{branch_name}", show=True)
+            run("git switch", local_branch, show=True)
+        run("git merge", f"{local_remote}/{original_branch}", show=True)
 
 
 if __name__ == "__main__":
