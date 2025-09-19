@@ -70,3 +70,44 @@ fp = "push --force-with-lease"
 # git diff, but word-by-word instead of line-by-line
 wdiff = diff --color-words
 ```
+
+## Configuration
+
+I recommend:
+
+```
+git config --global merge.conflictstyle zdiff3
+```
+
+It makes resolving conflicts so much easier, since it shows you the
+common ancestor, thereby helping you figure out the *intent* of
+changes.
+
+For example, consider the following diff:
+
+```diff
+<<<<<<< HEAD
+position = velocity * time + 0.5 * acceleration * time**2
+=======
+position = velocity * time
+>>>>>>> merged-branch
+```
+
+All you see is two formulas, and you must choose the right one. 🤔
+
+But, look at the `diff3` version:
+
+```
+<<<<<<< HEAD
+position = velocity * time + 0.5 * acceleration * time**2
+||||||| merged common ancestor
+position = velocity * time + acceleration * time
+=======
+position = velocity * time
+>>>>>>> merged-branch
+```
+
+Immediately, you see what happened. On `HEAD`, the ancestor commit's
+approximation is corrected by introducing the proper 0.5 scaling
+factor on the acceleration term. And it is clear that removing this
+term (as in `merged-branch`) is not the correct solution.
