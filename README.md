@@ -12,6 +12,7 @@ you can now use `git pr`.
          It should be straightforward to also remove remote branches; any takers?
 - `brhist`: Show last modification date of each branch
 - `wipe`: Permanently delete files from repository by rewriting history.
+- `split`: Duplicate a file, while keeping its history attached to both copies.
 
 ## Aliases
 
@@ -73,6 +74,8 @@ wdiff = diff --color-words
 
 ## Configuration
 
+### Conflict diff display
+
 I recommend:
 
 ```
@@ -111,3 +114,12 @@ Immediately, you see what happened. On `HEAD`, the ancestor commit's
 approximation is corrected by introducing the proper 0.5 scaling
 factor on the acceleration term. And it is clear that removing this
 term (as in `merged-branch`) is not the correct solution.
+
+### Saving conflict resolutions
+
+```
+git config --global rerere.enabled true
+```
+
+This will enable saving conflict resolution, so it [can be reused in
+the future](https://git-scm.com/book/en/v2/Git-Tools-Rerere).
