@@ -14,6 +14,16 @@ you can now use `git pr`.
 - `wipe`: Permanently delete files from repository by rewriting history.
 - `split`: Duplicate a file, while keeping its history attached to both copies.
 
+## GitHub
+
+These scripts interact with GitHub:
+
+- `gh-latest`: List PRs with most recent commits, optionally filtered
+               by user, draft status, etc.  This is different from
+               sorting by "Recently updated" on GH: that includes
+               comments, meaning that once you've commented on a PR it
+               pops to the top of the list.
+
 ## Aliases
 
 These go under the `[alias]` section in `~/.gitconfig`.

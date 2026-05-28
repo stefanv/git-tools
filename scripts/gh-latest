@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Print the latest PRs on the current repo, optionally filtered by author
+
+GET_TOKEN_CMD="authinfo-lookup api.github.com"
+
+usage() {
+  echo "Usage: $(basename "$0") [-n NUM] [--no-drafts] [--help] [AUTHOR]"
+  echo
+  echo "  AUTHOR       GitHub username to filter by (default: all)"
+  echo "  -n NUM       Number of PRs to show (default: 20)"
+  echo "  --no-drafts  Suppress draft PRs"
+}
+
+limit=20
+no_drafts=false
+author=
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n)         limit="$2"; shift 2 ;;
+    --no-drafts) no_drafts=true; shift ;;
+    -h|--help)  usage; exit 0 ;;
+    -*)         echo "Unknown option: $1" >&2; exit 1 ;;
+    *)          author="$1"; shift ;;
+  esac
+done
+
+author_flag=()
+show_author=true
+if [[ -n "$author" ]]; then
+  author_flag=(--author "$author")
+  show_author=false
+fi
+
+GH_TOKEN=$($GET_TOKEN_CMD) GH_PAGER=cat gh pr list "${author_flag[@]}" --limit "$limit" --json number,title,url,commits,author,isDraft \
+  | jq -r --arg esc $'\e' --arg show_author "$show_author" --arg no_drafts "$no_drafts" '
+      map(. + {lastCommitDate: (.commits[-1].committedDate | fromdateiso8601 | strflocaltime("%Y-%m-%d %H:%M"))})
+      | if $no_drafts == "true" then map(select(.isDraft | not)) else . end
+      | sort_by(.lastCommitDate)
+      | reverse
+      | .[]
+      | "\($esc)[36m\(.lastCommitDate)\($esc)[0m - \($esc)[33m#\(.number)\($esc)[0m\(if .isDraft then " [\($esc)[31mD\($esc)[0m]" else "" end): \(.title)\(if $show_author == "true" then " [\($esc)[35m\(.author.login)\($esc)[0m]" else "" end) (\($esc)[34m\($esc)[4m\(.url)\($esc)[0m)"'
