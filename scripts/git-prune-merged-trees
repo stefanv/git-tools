@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Prune worktrees whose branches have been merged into main.
+# Usage: ./git-prune-worktrees [--force|-f]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FORCE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --force|-f) FORCE=1 ;;
+    *) echo "Unknown argument: $arg" >&2; exit 1 ;;
+  esac
+done
+
+MAIN_REPO="$(git -C "$SCRIPT_DIR" rev-parse --git-common-dir)"
+MAIN_REPO="$(dirname "$MAIN_REPO")"
+
+echo "Fetching origin..."
+git -C "$MAIN_REPO" fetch --quiet origin
+
+pruned=0
+need_prune=0
+
+for dir in "$SCRIPT_DIR"/*/; do
+  [[ -d "$dir" ]] || continue
+  dir="${dir%/}"
+  name="$(basename "$dir")"
+
+  git_file="$dir/.git"
+  if [[ ! -f "$git_file" ]]; then
+    echo "  $name: no .git file, skipping"
+    continue
+  fi
+
+  # .git contains "gitdir: <abs-path-to-.git/worktrees/<name>>"
+  gitdir_ptr="$(sed 's/^gitdir: //' "$git_file")"
+
+  if [[ ! -d "$gitdir_ptr" ]]; then
+    echo "  $name: git metadata missing at $gitdir_ptr, skipping"
+    continue
+  fi
+
+  head="$(cat "$gitdir_ptr/HEAD" 2>/dev/null || true)"
+  if [[ "$head" != ref:\ refs/heads/* ]]; then
+    echo "  $name: detached HEAD, skipping"
+    continue
+  fi
+  branch="${head#ref: refs/heads/}"
+
+  # git cherry marks commits '+' if the patch is absent from origin/main, '-' if present.
+  # A branch with no '+' commits is fully merged, including squash and rebase merges.
+  unpicked=$(git -C "$MAIN_REPO" cherry origin/main "$branch" | grep -c '^+' || true)
+  if (( unpicked > 0 )); then
+    echo "  $name ($branch): not merged, keeping"
+    continue
+  fi
+
+  do_remove() {
+    # git worktree remove works when the registered path matches $dir.
+    # For renamed/prunable worktrees the registered path differs, so fall back
+    # to a manual delete and let git worktree prune clean up the metadata.
+    if git -C "$MAIN_REPO" worktree remove --force "$dir" 2>/dev/null; then
+      : # git handled everything
+    else
+      rm -rf "$dir"
+      need_prune=1
+    fi
+  }
+
+  if (( FORCE )); then
+    echo "  $name ($branch): merged, removing"
+    do_remove
+    (( ++pruned ))
+  else
+    read -r -p "  $name ($branch): merged -- remove? [y/N] " ans
+    if [[ "$ans" =~ ^[Yy]$ ]]; then
+      do_remove
+      (( ++pruned ))
+    else
+      echo "    skipped"
+    fi
+  fi
+done
+
+if (( need_prune )); then
+  git -C "$MAIN_REPO" worktree prune
+fi
+
+echo ""
+echo "$pruned worktree(s) removed."
