@@ -4,7 +4,6 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORCE=0
 
 for arg in "$@"; do
@@ -14,7 +13,7 @@ for arg in "$@"; do
   esac
 done
 
-MAIN_REPO="$(git -C "$SCRIPT_DIR" rev-parse --git-common-dir)"
+MAIN_REPO="$(git -C "$PWD" rev-parse --git-common-dir)"
 MAIN_REPO="$(dirname "$MAIN_REPO")"
 
 echo "Fetching origin..."
@@ -23,7 +22,7 @@ git -C "$MAIN_REPO" fetch --quiet origin
 pruned=0
 need_prune=0
 
-for dir in "$SCRIPT_DIR"/*/; do
+for dir in "$PWD"/*/; do
   [[ -d "$dir" ]] || continue
   dir="${dir%/}"
   name="$(basename "$dir")"
