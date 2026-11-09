@@ -74,8 +74,10 @@ for entry in ${entries[@]+"${entries[@]}"}; do
   if ! how="$(merged_how "$branch")"; then
     echo "  $name ($branch): not merged, keeping"; continue
   fi
+  force_cmd="    to remove anyway: git worktree remove --force $(printf '%q' "$dir")"
   if [[ -n "$(git -C "$dir" status --porcelain)" ]]; then
-    echo "  $name ($branch): $how, but has local changes, keeping"; continue
+    echo "  $name ($branch): $how, but has local changes, keeping"
+    echo "$force_cmd"; continue
   fi
 
   if (( ! FORCE )); then
@@ -84,8 +86,11 @@ for entry in ${entries[@]+"${entries[@]}"}; do
   else
     echo "  $name ($branch): $how, removing"
   fi
-  git worktree remove "$dir"
-  (( ++pruned ))
+  if git worktree remove "$dir"; then
+    (( ++pruned ))
+  else
+    echo "$force_cmd"
+  fi
 done
 
 echo ""
