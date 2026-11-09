@@ -36,17 +36,17 @@ merged_how() {
   if [[ "${out%%$'\n'*}" == "$base_tree" ]]; then
     echo "no changes against $base"; return
   fi
-  # Every commit has an equivalent patch in base (rebase merge).
-  out="$(git cherry "$base" "$b")"
-  if [[ "$out" != *"+"* ]]; then
-    echo "rebase-merged"; return
-  fi
   # The combined branch diff has an equivalent patch in base (squash merge).
   mb="$(git merge-base "$base" "$b")"
   squash="$(git commit-tree "$b^{tree}" -p "$mb" -m squash)"
   out="$(git cherry "$base" "$squash")"
   if [[ "$out" == -* ]]; then
     echo "squash-merged"; return
+  fi
+  # Every commit has an equivalent patch in base (rebase merge).
+  out="$(git cherry "$base" "$b")"
+  if [[ "$out" != *"+"* ]]; then
+    echo "rebase-merged"; return
   fi
   return 1
 }
